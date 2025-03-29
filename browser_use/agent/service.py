@@ -61,19 +61,28 @@ logger = logging.getLogger(__name__)
 def log_response(response: AgentOutput) -> None:
 	"""Utility function to log the model's response."""
 
-	if 'Success' in response.current_state.evaluation_previous_goal:
-		emoji = '👍'
-	elif 'Failed' in response.current_state.evaluation_previous_goal:
-		emoji = '⚠'
-	else:
-		emoji = '🤷'
+	logger.info(f'📤 Response:' )
+	logger.info(f'🧠  {response.model_dump_json(indent=2)}')
 
-	logger.info(f'{emoji} Eval: {response.current_state.evaluation_previous_goal}')
-	logger.info(f'🧠 Memory: {response.current_state.memory}')
-	logger.info(f'🎯 Next goal: {response.current_state.next_goal}')
-	for i, action in enumerate(response.action):
-		logger.info(f'🛠️  Action {i + 1}/{len(response.action)}: {action.model_dump_json(exclude_unset=True)}')
+	# if 'Success' in response.current_state.evaluation_previous_goal:
+	# 	emoji = '👍'
+	# elif 'Failed' in response.current_state.evaluation_previous_goal:
+	# 	emoji = '⚠'
+	# else:
+	# 	emoji = '🤷'
+	#
+	# logger.info(f'{emoji} Eval: {response.current_state.evaluation_previous_goal}')
+	# logger.info(f'🧠 Memory: {response.current_state.memory}')
+	# logger.info(f'🎯 Next goal: {response.current_state.next_goal}')
+	# for i, action in enumerate(response.action):
+	# 	logger.info(f'🛠️  Action {i + 1}/{len(response.action)}: {action.model_dump_json(exclude_unset=True)}')
 
+def log_input_messages(input_messages: list[BaseMessage]) -> None:
+	"""Utility function to log the input messages."""
+	logger.info('📥 Input messages:')
+	for i, message in enumerate(input_messages):
+		logger.info(f'📥 Message {i + 1}/{len(input_messages)}: ')
+		logger.info(f'📥 {message.model_dump_json(indent=2)} ')
 
 Context = TypeVar('Context')
 
@@ -535,6 +544,8 @@ class Agent(Generic[Context]):
 			parsed: AgentOutput | None = response['parsed']
 		else:
 			structured_llm = self.llm.with_structured_output(self.AgentOutput, include_raw=True, method=self.tool_calling_method)
+
+			log_input_messages(input_messages)
 			response: dict[str, Any] = await structured_llm.ainvoke(input_messages)  # type: ignore
 			
 		# Handle tool call responses
